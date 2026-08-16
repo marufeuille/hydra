@@ -1,0 +1,32 @@
+# Built application files
+*.apk
+*.aar
+*.ap_
+*.aab
+
+# Files for the ART/Dalvik VM
+*.dex
+
+# Gradle files
+.gradle/
+build/
+
+# Local configuration file (SDK paths — machine-specific)
+local.properties
+.adb-device
+
+# Signing configs
+keystore.properties
+*.jks
+*.keystore
+
+# IntelliJ / Android Studio
+.DS_Store
+*.iml
+.idea/
+misc.xml
+deploymentTargetDropDown.xml
+render.experimental.xml
+
+# Kotlin
+.kotlin/

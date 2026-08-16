@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>水分記録モック — Pixel Watch 4</title>
+  <style>
+    :root {
+      --bg: #111214;
+      --text: #e8e8ea;
+      --muted: #8b8b90;
+      --face: #1c1c1e;
+      --stroke: #3a3a3e;
+      --track: #3f3f46;
+      --fill: #6ea8ff;
+      --btn: #2c2c30;
+      --accent: #6ea8ff;
+      --on-accent: #0b1220;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 20px 48px;
+    }
+    h1 { font-size: 20px; font-weight: 650; margin: 0 0 8px; }
+    .lead { color: var(--muted); font-size: 14px; margin: 0 0 20px; max-width: 420px; text-align: center; line-height: 1.5; }
+    .nav { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 24px; }
+    .nav button {
+      border: 1px solid var(--stroke);
+      background: transparent;
+      color: var(--text);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .nav button[aria-current="true"] { background: var(--btn); }
+    .watch {
+      width: 268px;
+      height: 268px;
+      border-radius: 50%;
+      background: var(--face);
+      border: 2px solid var(--stroke);
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .watch.clickable { cursor: pointer; }
+    .watch svg { position: absolute; inset: 0; pointer-events: none; }
+    .content {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-align: center;
+    }
+    .label { color: var(--muted); font-size: 11px; letter-spacing: 0.04em; }
+    .big { font-size: 28px; font-weight: 650; line-height: 1; }
+    .draft { font-size: 32px; font-weight: 650; line-height: 1; }
+    .unit { font-size: 14px; font-weight: 500; color: var(--muted); margin-left: 4px; }
+    .sub { color: var(--muted); font-size: 13px; }
+    .row { display: flex; gap: 10px; align-items: center; }
+    .face-btn {
+      height: 36px;
+      min-width: 56px;
+      padding: 0 14px;
+      border: none;
+      border-radius: 18px;
+      background: var(--btn);
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .face-btn.accent { background: var(--accent); color: var(--on-accent); }
+    .face-btn:disabled { opacity: 0.35; cursor: default; }
+    .linkish {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .hint { color: var(--muted); font-size: 13px; margin-top: 12px; }
+    .state { color: var(--muted); font-size: 13px; margin-top: 20px; max-width: 420px; text-align: center; line-height: 1.5; }
+    a { color: var(--fill); }
+  </style>
+</head>
+<body>
+  <h1>水分記録 — Pixel Watch 4 モック</h1>
+  <p class="lead">
+    仕様どおりの操作確認用。半円は左 0% → 12時 → 右 100%。
+    実装リポジトリは Intervo ではない。仕様は
+    <a href="./wear-hydration.md">wear-hydration.md</a>。
+  </p>
+  <div class="nav">
+    <button type="button" data-screen="tile">タイル</button>
+    <button type="button" data-screen="record">記録</button>
+    <button type="button" data-screen="settings">設定</button>
+    <button type="button" id="reset">デモをリセット</button>
+  </div>
+  <div id="watch" class="watch"></div>
+  <p class="hint" id="hint"></p>
+  <p class="state" id="state"></p>
+
+  <script>
+    const WATCH = 268;
+    const CX = WATCH / 2;
+    const CY = WATCH / 2;
+    const R = 112;
+    const STEP = 100;
+    const DRAFT_MAX = 2000;
+    const GOAL_MIN = 100;
+    const GOAL_MAX = 5000;
+
+    const state = {
+      screen: "tile",
+      todayMl: 800,
+      goalMl: 2000,
+      draftMl: 100,
+    };
+
+    function clamp(n, min, max) {
+      return Math.max(min, Math.min(max, n));
+    }
+
+    function topSemicirclePath() {
+      const x0 = CX + R * Math.cos(Math.PI);
+      const y0 = CY + R * Math.sin(Math.PI);
+      const x1 = CX + R * Math.cos(2 * Math.PI);
+      const y1 = CY + R * Math.sin(2 * Math.PI);
+      return `M ${x0} ${y0} A ${R} ${R} 0 0 1 ${x1} ${y1}`;
+    }
+
+    function gaugeSvg(progress) {
+      const p = clamp(progress, 0, 1);
+      const d = topSemicirclePath();
+      const fill = p > 0.004
+        ? `<path d="${d}" fill="none" stroke="var(--fill)" stroke-width="10" stroke-linecap="round" pathLength="100" stroke-dasharray="${p * 100} 100" />`
+        : "";
+      return `<svg width="${WATCH}" height="${WATCH}" viewBox="0 0 ${WATCH} ${WATCH}" aria-hidden="true">
+        <path d="${d}" fill="none" stroke="var(--track)" stroke-width="10" stroke-linecap="round" />
+        ${fill}
+      </svg>`;
+    }
+
+    function render() {
+      const progress = state.todayMl / state.goalMl;
+      const pct = Math.round(clamp(progress, 0, 1) * 100);
+      const watch = document.getElementById("watch");
+      const hint = document.getElementById("hint");
+      document.querySelectorAll(".nav [data-screen]").forEach((btn) => {
+        btn.setAttribute("aria-current", btn.dataset.screen === state.screen ? "true" : "false");
+      });
+
+      if (state.screen === "tile") {
+        watch.classList.add("clickable");
+        watch.innerHTML = gaugeSvg(progress) + `
+          <div class="content" style="padding-bottom:18px">
+            <div class="label">今日</div>
+            <div class="big">${state.todayMl}</div>
+            <div class="sub">/ ${state.goalMl} ml</div>
+          </div>`;
+        hint.textContent = "タップで記録画面へ";
+      } else if (state.screen === "record") {
+        watch.classList.remove("clickable");
+        watch.innerHTML = gaugeSvg(progress) + `
+          <div class="content">
+            <button type="button" class="linkish" data-action="open-settings">${state.todayMl} / ${state.goalMl} ml</button>
+            <div class="draft">${state.draftMl}<span class="unit">ml</span></div>
+            <div class="row">
+              <button type="button" class="face-btn" data-action="draft-minus" ${state.draftMl <= 0 ? "disabled" : ""}>−</button>
+              <button type="button" class="face-btn" data-action="draft-plus" ${state.draftMl >= DRAFT_MAX ? "disabled" : ""}>+</button>
+            </div>
+            <button type="button" class="face-btn accent" data-action="submit" ${state.draftMl < STEP ? "disabled" : ""}>Submit</button>
+          </div>`;
+        hint.textContent = "量を合わせて Submit。上の数字で設定へ";
+      } else {
+        watch.classList.remove("clickable");
+        watch.innerHTML = `
+          <div class="content">
+            <div class="label">1日の目標</div>
+            <div class="big">${state.goalMl} ml</div>
+            <div class="row">
+              <button type="button" class="face-btn" data-action="goal-minus" ${state.goalMl <= GOAL_MIN ? "disabled" : ""}>−</button>
+              <button type="button" class="face-btn" data-action="goal-plus" ${state.goalMl >= GOAL_MAX ? "disabled" : ""}>+</button>
+            </div>
+            <button type="button" class="face-btn" data-action="back-record">戻る</button>
+          </div>`;
+        hint.textContent = "目標を 100ml 刻みで変更";
+      }
+
+      document.getElementById("state").textContent =
+        `今日 ${state.todayMl} ml / 目標 ${state.goalMl} ml（${pct}%${progress > 1 ? "・超過" : ""}）。ドラフト ${state.draftMl} ml。Submit するまでゲージは伸びません。`;
+    }
+
+    document.querySelector(".nav").addEventListener("click", (event) => {
+      const screen = event.target.dataset.screen;
+      if (screen) state.screen = screen;
+      if (event.target.id === "reset") {
+        state.screen = "tile";
+        state.todayMl = 800;
+        state.goalMl = 2000;
+        state.draftMl = 100;
+      }
+      render();
+    });
+
+    document.getElementById("watch").addEventListener("click", (event) => {
+      const action = event.target.closest("[data-action]")?.dataset.action;
+      if (state.screen === "tile" && !action) {
+        state.screen = "record";
+        render();
+        return;
+      }
+      if (action === "open-settings") state.screen = "settings";
+      if (action === "back-record") state.screen = "record";
+      if (action === "draft-minus") state.draftMl = clamp(state.draftMl - STEP, 0, DRAFT_MAX);
+      if (action === "draft-plus") state.draftMl = clamp(state.draftMl + STEP, 0, DRAFT_MAX);
+      if (action === "submit" && state.draftMl >= STEP) {
+        state.todayMl += state.draftMl;
+        state.draftMl = 100;
+      }
+      if (action === "goal-minus") state.goalMl = clamp(state.goalMl - STEP, GOAL_MIN, GOAL_MAX);
+      if (action === "goal-plus") state.goalMl = clamp(state.goalMl + STEP, GOAL_MIN, GOAL_MAX);
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>

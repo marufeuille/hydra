@@ -2,7 +2,7 @@
 
 Wear OS 向けの個人用水分記録アプリ。タイルから飲む量を合わせて、スマホの companion が Health Connect の `HydrationRecord` に書く。
 
-Intervo とは別アプリ。Play 公開はしない（サイドロード前提）。
+Intervo とは別アプリ。製品版公開はせず、**Play 内部テスト**で自分用に入れる。
 
 ## 構成
 
@@ -11,7 +11,7 @@ Intervo とは別アプリ。Play 公開はしない（サイドロード前提�
 | `:app` | ウォッチ。タイル / 記録 / 目標。Submit は Data Layer で送るだけ |
 | `:companion` | スマホ。Health Connect の権限と書き込み。今日の合計をウォッチへ返す |
 
-`applicationId` は両方とも `dev.marufeuille.hydra`（debug は `.debug`）。Wear の Data Layer が同じパッケージ名を要求するため。
+`applicationId` は両方とも `dev.marufeuille.hydra`（debug は `.debug`）。
 
 ## できること
 
@@ -20,37 +20,29 @@ Intervo とは別アプリ。Play 公開はしない（サイドロード前提�
 - ウォッチ設定で 1 日の目標（初期値 2000ml）
 - スマホの Hydra で Health Connect の水分読み取り・書き込みを許可
 
-## やらないこと
+仕様と操作モックは [docs/spec/wear-hydration.md](docs/spec/wear-hydration.md)。配信手順は [docs/release-ci.md](docs/release-ci.md)。
 
-- 履歴一覧、記録の削除、リマインダー
-- `+` / `−` のたびに Health Connect へ書くこと
-- Intervo や pulse-board への混在
-
-仕様と操作モックは [docs/spec/wear-hydration.md](docs/spec/wear-hydration.md)。
-
-## ビルドと実機
-
-ウォッチ:
+## 開発用（debug サイドロード）
 
 ```bash
-./gradlew :app:assembleDebug
-adb -s <watch-serial> install -r app/build/outputs/apk/debug/app-debug.apk
+./gradlew :app:assembleDebug :companion:assembleDebug
+adb -s <watch> install -r app/build/outputs/apk/debug/app-debug.apk
+adb -s <phone> install -r companion/build/outputs/apk/debug/companion-debug.apk
 ```
 
-スマホ（USB またはワイヤレス）:
-
-```bash
-./gradlew :companion:assembleDebug
-adb -s <phone-serial> install -r companion/build/outputs/apk/debug/companion-debug.apk
-```
+Play 内部テスト版（`dev.marufeuille.hydra`）とは別アプリとして共存する。
 
 入れたあと:
 
 1. スマホで **Hydra** を開く → **許可する** → 水分の読み取り・書き込みを許可
-2. ウォッチのタイルを追加。連携済みなら今日の量が表示される
+2. ウォッチの文字盤を長押し → タイルを追加 → Hydra
 
-ユニットテスト:
+## リリース
 
 ```bash
-./gradlew :app:testDebugUnitTest :companion:testDebugUnitTest
+# ノートを書いてから
+git tag v0.1.0
+git push origin v0.1.0
 ```
+
+内部テストのリンクからウォッチとスマホに入る。

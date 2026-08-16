@@ -1,0 +1,47 @@
+name: Validate release notes
+
+# docs/release-notes-<VERSION>.md が release.yml の参照パス・抽出フォーマットに合うかを検証する。
+# テンプレートは対象外。検証対象はこの変更で追加/変更されたファイルだけ。
+on:
+  pull_request:
+    paths: ["docs/release-note*.md"]
+  push:
+    branches: [main]
+    paths: ["docs/release-note*.md"]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Validate changed release notes
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          if [ -n "$PR_BASE" ]; then
+            range="$PR_BASE...HEAD"
+          elif [ -n "$PUSH_BEFORE" ] && [ "$PUSH_BEFORE" != "0000000000000000000000000000000000000000" ]; then
+            range="$PUSH_BEFORE...HEAD"
+          else
+            range="HEAD~1...HEAD"
+          fi
+          echo "diff range: $range"
+          files=$(git diff --name-only --diff-filter=AM $range -- 'docs/release-note*.md' ':!docs/release-notes-TEMPLATE.md' || true)
+          if [ -z "$files" ]; then
+            echo "変更されたリリースノートはありません（スキップ）"
+            exit 0
+          fi
+          echo "検証対象:"
+          echo "$files"
+          python3 scripts/check_release_notes.py $files

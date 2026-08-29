@@ -7,6 +7,8 @@ import dev.marufeuille.hydra.domain.healthStatus
 import dev.marufeuille.hydra.domain.resolveDraft
 import dev.marufeuille.hydra.domain.stepDraft
 import dev.marufeuille.hydra.domain.stepGoal
+import dev.marufeuille.hydra.notification.HydrationReminder
+import dev.marufeuille.hydra.notification.NoOpHydrationReminder
 import dev.marufeuille.hydra.sync.HydrationSender
 import java.time.Clock
 import java.time.LocalDate
@@ -23,6 +25,7 @@ class HydrationRepository(
     private val sender: HydrationSender,
     private val clock: Clock = Clock.systemDefaultZone(),
     private val onChanged: () -> Unit = {},
+    private val reminder: HydrationReminder = NoOpHydrationReminder,
 ) {
     suspend fun snapshot(): HydrationSnapshot {
         val today = today()
@@ -71,10 +74,12 @@ class HydrationRepository(
         if (before.status == HealthStatus.NeedsPermission) {
             return SubmitResult.Failed(before)
         }
-        val sent = sender.sendSip(before.draftMl, clock.millis())
+        val recordedAtMillis = clock.millis()
+        val sent = sender.sendSip(before.draftMl, recordedAtMillis)
         if (sent.isFailure) {
             return SubmitResult.Failed(before)
         }
+        reminder.scheduleAfterSip(recordedAtMillis)
         val today = today()
         prefs.saveDraft(DRAFT_DEFAULT_ML, today)
         val stored = prefs.load()

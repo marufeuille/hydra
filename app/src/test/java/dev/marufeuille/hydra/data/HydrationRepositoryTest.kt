@@ -3,6 +3,7 @@ package dev.marufeuille.hydra.data
 import dev.marufeuille.hydra.domain.DRAFT_DEFAULT_ML
 import dev.marufeuille.hydra.domain.GOAL_DEFAULT_ML
 import dev.marufeuille.hydra.domain.HealthStatus
+import dev.marufeuille.hydra.notification.HydrationReminder
 import dev.marufeuille.hydra.sync.HydrationSender
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -32,11 +33,13 @@ class HydrationRepositoryTest {
     @Test
     fun `Submit でドラフト量が 1 件送られ今日の合計が増える`() = runBlocking {
         val sender = FakeSender()
-        val repo = HydrationRepository(InMemoryPrefs(readyStored(800)), sender, clock)
+        val reminder = FakeReminder()
+        val repo = HydrationRepository(InMemoryPrefs(readyStored(800)), sender, clock, reminder = reminder)
         repo.adjustDraft(2)
         val result = repo.submit()
         assertTrue(result is SubmitResult.Written)
         assertEquals(listOf(300), sender.sips)
+        assertEquals(listOf(clock.millis()), reminder.recordedAtMillis)
         assertEquals(1100, result.snapshot.todayMl)
         assertEquals(DRAFT_DEFAULT_ML, result.snapshot.draftMl)
     }
@@ -66,11 +69,18 @@ class HydrationRepositoryTest {
     @Test
     fun `権限なしの Submit は送らずドラフトを維持する`() = runBlocking {
         val sender = FakeSender()
-        val repo = HydrationRepository(InMemoryPrefs(readyStored(0).copy(companionPermitted = false)), sender, clock)
+        val reminder = FakeReminder()
+        val repo = HydrationRepository(
+            InMemoryPrefs(readyStored(0).copy(companionPermitted = false)),
+            sender,
+            clock,
+            reminder = reminder,
+        )
         repo.adjustDraft(2)
         val result = repo.submit()
         assertTrue(result is SubmitResult.Failed)
         assertEquals(emptyList<Int>(), sender.sips)
+        assertEquals(emptyList<Long>(), reminder.recordedAtMillis)
         assertEquals(300, result.snapshot.draftMl)
         assertEquals(HealthStatus.NeedsPermission, result.snapshot.status)
     }
@@ -155,5 +165,13 @@ class HydrationRepositoryTest {
             return Result.success(Unit)
         }
         override suspend fun requestStatus(): Result<Unit> = Result.success(Unit)
+    }
+
+    private class FakeReminder : HydrationReminder {
+        val recordedAtMillis = mutableListOf<Long>()
+
+        override fun scheduleAfterSip(recordedAtMillis: Long) {
+            this.recordedAtMillis += recordedAtMillis
+        }
     }
 }

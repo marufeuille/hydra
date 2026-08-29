@@ -18,6 +18,7 @@ Intervo とは別アプリ。製品版公開はせず、**Play 内部テスト**
 - タイルに今日の摂取量 / 目標と、左 0%・右 100% の半円ゲージ
 - 記録画面で `+` / `−`（未送信のドラフトのみ）→ Submit で 1 件送信
 - ウォッチ設定で 1 日の目標（初期値 2000ml）
+- 最後の記録から約 1 時間空くと振動で通知
 - スマホの Hydra で Health Connect の水分読み取り・書き込みを許可
 
 仕様と操作モックは [docs/spec/wear-hydration.md](docs/spec/wear-hydration.md)。配信手順は [docs/release-ci.md](docs/release-ci.md)。

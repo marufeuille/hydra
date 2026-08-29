@@ -14,22 +14,90 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Select Gradle tasks
+        id: tasks
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            diff_command=(git diff --no-renames --name-only --diff-filter=ACMRTD "$PR_BASE_SHA...$GITHUB_SHA")
+          elif [[ -n "$PUSH_BEFORE_SHA" && "$PUSH_BEFORE_SHA" != "0000000000000000000000000000000000000000" ]]; then
+            diff_command=(git diff --no-renames --name-only --diff-filter=ACMRTD "$PUSH_BEFORE_SHA...$GITHUB_SHA")
+          else
+            diff_command=(git diff-tree --no-renames --root --no-commit-id --name-only -r "$GITHUB_SHA")
+          fi
+
+          changed_files="$("${diff_command[@]}")"
+          if [[ -z "$changed_files" ]]; then
+            printf 'gradle_tasks=\n' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          app=false
+          companion=false
+          while IFS= read -r file; do
+            case "$file" in
+              app/*)
+                app=true
+                ;;
+              companion/*)
+                companion=true
+                ;;
+              build.gradle.kts|settings.gradle.kts|gradle.properties|gradle/*|gradlew|gradlew.bat|.github/workflows/*)
+                app=true
+                companion=true
+                ;;
+              *)
+                # Unknown project files may affect either module.
+                app=true
+                companion=true
+                ;;
+            esac
+          done <<< "$changed_files"
+
+          tasks=()
+          if [[ "$app" == "true" ]]; then
+            tasks+=(":app:assembleDebug" ":app:lintDebug" ":app:testDebugUnitTest")
+          fi
+          if [[ "$companion" == "true" ]]; then
+            tasks+=(":companion:assembleDebug" ":companion:testDebugUnitTest")
+          fi
+
+          printf 'gradle_tasks=%s\n' "${tasks[*]}" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-java@v5
+        if: steps.tasks.outputs.gradle_tasks != ''
         with:
           distribution: temurin
           java-version: "17"
 
       - uses: gradle/actions/setup-gradle@v6
+        if: steps.tasks.outputs.gradle_tasks != ''
 
       - name: Build, lint and run unit tests
-        run: ./gradlew :app:assembleDebug :app:lintDebug :app:testDebugUnitTest :companion:assembleDebug :companion:testDebugUnitTest
+        if: steps.tasks.outputs.gradle_tasks != ''
+        run: ./gradlew ${{ steps.tasks.outputs.gradle_tasks }} --configuration-cache
 
       - name: Upload reports
         if: failure()
@@ -39,3 +107,4 @@ jobs:
           path: |
             app/build/reports/tests/
             app/build/reports/lint-results-*.html
+            companion/build/reports/tests/

@@ -18,6 +18,31 @@ fi
 printf 'sdk.dir=%s\n' "$sdk_dir" > local.properties
 ```
 
+## エミュレータでの動作確認
+
+Android SDK、Java 17 以上、`lsof` または `nc` を用意してから、リポジトリのルートで
+次を実行する。macOS / Linux の標準 SDK パスは自動検出される。
+
+```bash
+./scripts/setup_emulator.sh
+```
+
+このスクリプトは API 36 のウォッチ用・スマホ用 AVD を作成（存在すれば再利用）し、
+Debug APK のビルド、インストール、アプリ起動まで行う。作成だけ行う場合は
+`--setup-only`、APK を再ビルドしない場合は `--no-build` を付ける。
+
+既存の AVD を使う場合は、次の環境変数で名前を指定する。
+
+```bash
+HYDRA_WATCH_AVD=Wear_OS_Round_API36 \
+HYDRA_PHONE_AVD=Pixel_10_API36 \
+./scripts/setup_emulator.sh
+```
+
+起動後、スマホ側で Health Connect の水分の読み取り・書き込みを許可する。
+ウォッチとスマホの Data Layer 連携を確認する場合は、Android Studio の Wear OS
+Pairing Assistant で 2 台をペアリングする。
+
 ## 変更後のテスト
 
 コード、テスト、ビルド設定、ドキュメントのいずれを変更した場合も、完了前に必ず

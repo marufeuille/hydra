@@ -23,6 +23,32 @@ Intervo とは別アプリ。製品版公開はせず、**Play 内部テスト**
 
 仕様と操作モックは [docs/spec/wear-hydration.md](docs/spec/wear-hydration.md)。配信手順は [docs/release-ci.md](docs/release-ci.md)。
 
+## 開発用（エミュレータ）
+
+macOS / Linux の Android SDK と Java 17 以上を用意したうえで、次を実行すると
+ウォッチ用・スマホ用 AVD の作成（既存なら再利用）、Debug ビルド、インストール、
+アプリ起動まで行う。
+
+```bash
+./scripts/setup_emulator.sh
+```
+
+デフォルトでは Android 16 / API 36 の `Hydra_Wear_API36` と
+`Hydra_Phone_API36` を使う。既存の AVD を使う場合は名前を環境変数で指定できる。
+
+```bash
+HYDRA_WATCH_AVD=Wear_OS_Round_API36 \
+HYDRA_PHONE_AVD=Pixel_10_API36 \
+./scripts/setup_emulator.sh
+```
+
+AVD の作成だけ行う場合は `--setup-only`、APK を再ビルドしない場合は `--no-build`
+を付ける。
+
+起動後、スマホ側で Hydra を開いて Health Connect の水分の読み取り・書き込みを許可する。
+ウォッチとスマホの Data Layer 連携まで確認する場合は、Android Studio の Wear OS
+Pairing Assistant で 2 台をペアリングする。
+
 ## 開発用（debug サイドロード）
 
 ```bash

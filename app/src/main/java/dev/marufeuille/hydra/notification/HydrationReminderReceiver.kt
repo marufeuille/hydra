@@ -13,6 +13,12 @@ import dev.marufeuille.hydra.R
 
 class HydrationReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
+        val scheduler = HydrationReminderScheduler(context)
+        if (HydrationReminderQuietHours.isQuietTime(System.currentTimeMillis())) {
+            scheduler.scheduleNextFromNow()
+            return
+        }
+
         createNotificationChannel(context)
         val notificationIntent = PendingIntent.getActivity(
             context,
@@ -35,7 +41,7 @@ class HydrationReminderReceiver : BroadcastReceiver() {
             notificationManager.notify(NOTIFICATION_ID, notification)
         }
 
-        HydrationReminderScheduler(context).scheduleNextFromNow()
+        scheduler.scheduleNextFromNow()
     }
 
     private fun createNotificationChannel(context: Context) {

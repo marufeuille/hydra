@@ -61,7 +61,12 @@ class HydrationReminderScheduler(context: Context) : HydrationReminder {
     }
 
     fun scheduleNextFromNow() {
-        scheduleAt(System.currentTimeMillis() + REMINDER_INTERVAL_MILLIS)
+        scheduleAt(
+            HydrationReminderQuietHours.nextReminderAt(
+                nowMillis = System.currentTimeMillis(),
+                intervalMillis = REMINDER_INTERVAL_MILLIS,
+            ),
+        )
     }
 
     fun cancel() {
@@ -71,12 +76,13 @@ class HydrationReminderScheduler(context: Context) : HydrationReminder {
     }
 
     private fun scheduleAt(triggerAtMillis: Long) {
+        val adjustedTriggerAt = HydrationReminderQuietHours.deferIfQuietTime(triggerAtMillis)
         reminderPendingIntent(PendingIntent.FLAG_NO_CREATE)?.let(alarmManager::cancel)
         val pendingIntent = reminderPendingIntent(PendingIntent.FLAG_UPDATE_CURRENT) ?: return
-        reminderPrefs.edit().putLong(NEXT_REMINDER_AT, triggerAtMillis).apply()
+        reminderPrefs.edit().putLong(NEXT_REMINDER_AT, adjustedTriggerAt).apply()
         alarmManager.setAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
-            triggerAtMillis,
+            adjustedTriggerAt,
             pendingIntent,
         )
     }

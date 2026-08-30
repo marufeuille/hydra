@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -20,6 +21,7 @@ import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.Text
 import dev.marufeuille.hydra.domain.HealthStatus
+import dev.marufeuille.hydra.ui.HydraTestTags
 import dev.marufeuille.hydra.ui.components.SemicircleGauge
 import dev.marufeuille.hydra.ui.components.StepperButtons
 import dev.marufeuille.hydra.ui.theme.Accent
@@ -74,6 +76,7 @@ internal fun RecordContent(
                 fontSize = 11.sp,
                 color = TextSecondary,
                 modifier = Modifier
+                    .testTag(HydraTestTags.RECORD_TODAY)
                     .clickable(onClick = onOpenSettings)
                     .padding(4.dp),
             )
@@ -83,6 +86,7 @@ internal fun RecordContent(
                     fontSize = 32.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = TextPrimary,
+                    modifier = Modifier.testTag(HydraTestTags.RECORD_DRAFT),
                 )
                 Text(
                     text = " ml",
@@ -96,12 +100,15 @@ internal fun RecordContent(
                 plusEnabled = state.plusEnabled,
                 onMinus = onMinus,
                 onPlus = onPlus,
+                minusTestTag = HydraTestTags.RECORD_MINUS,
+                plusTestTag = HydraTestTags.RECORD_PLUS,
                 modifier = Modifier.padding(top = 6.dp),
             )
             Button(
                 onClick = onSubmit,
                 enabled = state.submitEnabled,
                 modifier = Modifier
+                    .testTag(HydraTestTags.RECORD_SUBMIT)
                     .padding(top = 8.dp)
                     .size(width = 96.dp, height = 36.dp),
                 colors = ButtonDefaults.buttonColors(

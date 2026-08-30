@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -17,6 +18,7 @@ import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.CompactButton
 import androidx.wear.compose.material.Text
 import dev.marufeuille.hydra.domain.HealthStatus
+import dev.marufeuille.hydra.ui.HydraTestTags
 import dev.marufeuille.hydra.ui.components.StepperButtons
 import dev.marufeuille.hydra.ui.theme.ButtonDark
 import dev.marufeuille.hydra.ui.theme.TextPrimary
@@ -61,13 +63,17 @@ internal fun SettingsContent(
             fontSize = 26.sp,
             fontWeight = FontWeight.SemiBold,
             color = TextPrimary,
-            modifier = Modifier.padding(top = 2.dp, bottom = 6.dp),
+            modifier = Modifier
+                .testTag(HydraTestTags.SETTINGS_GOAL)
+                .padding(top = 2.dp, bottom = 6.dp),
         )
         StepperButtons(
             minusEnabled = state.minusEnabled,
             plusEnabled = state.plusEnabled,
             onMinus = onMinus,
             onPlus = onPlus,
+            minusTestTag = HydraTestTags.SETTINGS_MINUS,
+            plusTestTag = HydraTestTags.SETTINGS_PLUS,
         )
         Text(
             text = statusText,
@@ -79,7 +85,9 @@ internal fun SettingsContent(
         CompactButton(
             onClick = onBack,
             colors = ButtonDefaults.buttonColors(backgroundColor = ButtonDark),
-            modifier = Modifier.padding(top = 4.dp),
+            modifier = Modifier
+                .testTag(HydraTestTags.SETTINGS_BACK)
+                .padding(top = 4.dp),
         ) {
             Text("戻る", fontSize = 12.sp, color = TextPrimary)
         }

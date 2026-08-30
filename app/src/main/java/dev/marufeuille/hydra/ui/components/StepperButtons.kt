@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -20,14 +21,26 @@ fun StepperButtons(
     plusEnabled: Boolean,
     onMinus: () -> Unit,
     onPlus: () -> Unit,
+    minusTestTag: String? = null,
+    plusTestTag: String? = null,
     modifier: Modifier = Modifier,
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         modifier = modifier,
     ) {
-        StepButton("−", enabled = minusEnabled, onClick = onMinus)
-        StepButton("+", enabled = plusEnabled, onClick = onPlus)
+        StepButton(
+            label = "−",
+            enabled = minusEnabled,
+            onClick = onMinus,
+            testTag = minusTestTag,
+        )
+        StepButton(
+            label = "+",
+            enabled = plusEnabled,
+            onClick = onPlus,
+            testTag = plusTestTag,
+        )
     }
 }
 
@@ -36,10 +49,12 @@ private fun StepButton(
     label: String,
     enabled: Boolean,
     onClick: () -> Unit,
+    testTag: String?,
 ) {
     CompactButton(
         onClick = onClick,
         enabled = enabled,
+        modifier = testTag?.let { Modifier.testTag(it) } ?: Modifier,
         colors = ButtonDefaults.buttonColors(
             backgroundColor = ButtonDark,
             contentColor = TextPrimary,

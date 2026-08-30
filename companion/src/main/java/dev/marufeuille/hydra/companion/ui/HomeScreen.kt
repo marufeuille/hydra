@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.health.connect.client.PermissionController
@@ -36,43 +37,72 @@ fun HomeScreen(viewModel: HomeViewModel) {
         modifier = Modifier.fillMaxSize(),
         topBar = { TopAppBar(title = { Text("Hydra") }) },
     ) { padding ->
-        Column(
+        HomeContent(
+            state = state,
+            onRequestPermission = { launcher.launch(HealthConnectHydration.PERMISSIONS) },
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                "ウォッチのタイルから飲んだ量を送り、このスマホの Health Connect に書きます。",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+        )
+    }
+}
+
+@Composable
+internal fun HomeContent(
+    state: HomeUiState,
+    onRequestPermission: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val connectionLabel = if (state.permitted) "連携済み" else "未連携"
+    val connectionColor =
+        if (state.permitted) MaterialTheme.colorScheme.primary
+        else MaterialTheme.colorScheme.onSurfaceVariant
+    val permissionButtonLabel = if (state.permitted) "再連携" else "許可する"
+
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            "ウォッチのタイルから飲んだ量を送り、このスマホの Health Connect に書きます。",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text("Health Connect", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                        Text(
-                            if (state.permitted) "連携済み" else "未連携",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = if (state.permitted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Text(state.status, style = MaterialTheme.typography.bodySmall)
-                    Button(
-                        onClick = { launcher.launch(HealthConnectHydration.PERMISSIONS) },
-                        enabled = state.available,
-                        modifier = Modifier.align(Alignment.End),
-                    ) {
-                        Text(if (state.permitted) "再連携" else "許可する")
-                    }
+                    Text(
+                        text = "Health Connect",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = connectionLabel,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = connectionColor,
+                        modifier = Modifier.testTag(CompanionTestTags.HEALTH_CONNECT_STATUS),
+                    )
+                }
+                Text(
+                    state.status,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                Button(
+                    onClick = onRequestPermission,
+                    enabled = state.available,
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .testTag(CompanionTestTags.HEALTH_CONNECT_PERMISSION),
+                ) {
+                    Text(permissionButtonLabel)
                 }
             }
         }

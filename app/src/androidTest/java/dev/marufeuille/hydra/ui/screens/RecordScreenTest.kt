@@ -28,8 +28,8 @@ class RecordScreenTest {
                 RecordContent(
                     state = state.value,
                     onOpenSettings = {},
-                    onMinus = { state.value = state.value.copy(draftMl = (state.value.draftMl - 100).coerceAtLeast(0)) },
-                    onPlus = { state.value = state.value.copy(draftMl = state.value.draftMl + 100) },
+                    onMinus = { state.value = state.value.copy(draftMl = (state.value.draftMl - 50).coerceAtLeast(0)) },
+                    onPlus = { state.value = state.value.copy(draftMl = state.value.draftMl + 50) },
                     onSubmit = {},
                 )
             }
@@ -37,24 +37,24 @@ class RecordScreenTest {
 
         composeRule.onNodeWithTag(HydraTestTags.RECORD_TODAY)
             .assertTextEquals("800 / 2000 ml")
+        composeRule.onNodeWithTag(HydraTestTags.RECORD_DRAFT).assertTextEquals("0")
+
+        composeRule.onNodeWithTag(HydraTestTags.RECORD_PLUS).performClick()
+        composeRule.onNodeWithTag(HydraTestTags.RECORD_PLUS).performClick()
+
         composeRule.onNodeWithTag(HydraTestTags.RECORD_DRAFT).assertTextEquals("100")
-
-        composeRule.onNodeWithTag(HydraTestTags.RECORD_PLUS).performClick()
-        composeRule.onNodeWithTag(HydraTestTags.RECORD_PLUS).performClick()
-
-        composeRule.onNodeWithTag(HydraTestTags.RECORD_DRAFT).assertTextEquals("300")
         composeRule.onNodeWithTag(HydraTestTags.RECORD_TODAY)
-            .assertTextEquals("800 / 2000 ml")
+            .assertTextEquals("900 / 2000 ml")
 
         composeRule.onNodeWithTag(HydraTestTags.RECORD_MINUS).performClick()
-        composeRule.onNodeWithTag(HydraTestTags.RECORD_DRAFT).assertTextEquals("200")
+        composeRule.onNodeWithTag(HydraTestTags.RECORD_DRAFT).assertTextEquals("50")
         composeRule.onNodeWithTag(HydraTestTags.RECORD_TODAY)
-            .assertTextEquals("800 / 2000 ml")
+            .assertTextEquals("850 / 2000 ml")
     }
 
     @Test
     fun submitSuccessResetsDraftAndUpdatesToday() {
-        val state = mutableStateOf(readyRecordState().copy(draftMl = 300))
+        val state = mutableStateOf(readyRecordState().copy(draftMl = 250))
         composeRule.setContent {
             HydraTheme {
                 RecordContent(
@@ -63,7 +63,7 @@ class RecordScreenTest {
                     onMinus = {},
                     onPlus = {},
                     onSubmit = {
-                        state.value = state.value.copy(todayMl = 1100, draftMl = 100)
+                        state.value = state.value.copy(todayMl = 1050, draftMl = 0)
                     },
                 )
             }
@@ -73,8 +73,8 @@ class RecordScreenTest {
         composeRule.onNodeWithTag(HydraTestTags.RECORD_SUBMIT).performClick()
 
         composeRule.onNodeWithTag(HydraTestTags.RECORD_TODAY)
-            .assertTextEquals("1100 / 2000 ml")
-        composeRule.onNodeWithTag(HydraTestTags.RECORD_DRAFT).assertTextEquals("100")
+            .assertTextEquals("1050 / 2000 ml")
+        composeRule.onNodeWithTag(HydraTestTags.RECORD_DRAFT).assertTextEquals("0")
     }
 
     @Test
@@ -98,7 +98,7 @@ class RecordScreenTest {
     private fun readyRecordState() = RecordUiState(
         todayMl = 800,
         goalMl = 2000,
-        draftMl = 100,
+        draftMl = 0,
         status = HealthStatus.Ready,
     )
 }

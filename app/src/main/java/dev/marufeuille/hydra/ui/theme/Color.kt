@@ -8,4 +8,5 @@ val GaugeTrack = Color(0xFF3F3F46)
 val ButtonDark = Color(0xFF2C2C30)
 val Accent = Color(0xFF6EA8FF)
 val GaugeFill = Accent
+val GaugeDraft = Color(0xFFFF6B7A)
 val OnAccent = Color(0xFF0B1220)

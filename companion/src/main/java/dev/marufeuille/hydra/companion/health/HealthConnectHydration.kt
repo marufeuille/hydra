@@ -10,7 +10,9 @@ import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import androidx.health.connect.client.units.Volume
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
+import kotlin.math.roundToInt
 
 class HealthConnectHydration(context: Context) {
 
@@ -31,7 +33,7 @@ class HealthConnectHydration(context: Context) {
     suspend fun todayTotalMl(zone: ZoneId = ZoneId.systemDefault()): Result<Int> {
         if (!hasPermissions()) return Result.failure(IllegalStateException("no permission"))
         return runCatching {
-            val today = java.time.LocalDate.now(zone)
+            val today = LocalDate.now(zone)
             val start = today.atStartOfDay(zone).toInstant()
             val end = today.plusDays(1).atStartOfDay(zone).toInstant()
             val result = client.aggregate(
@@ -40,7 +42,7 @@ class HealthConnectHydration(context: Context) {
                     timeRangeFilter = TimeRangeFilter.between(start, end),
                 )
             )
-            result[HydrationRecord.VOLUME_TOTAL]?.inMilliliters?.toInt() ?: 0
+            result[HydrationRecord.VOLUME_TOTAL]?.inMilliliters?.roundToInt() ?: 0
         }
     }
 

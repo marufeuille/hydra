@@ -14,15 +14,16 @@ class HydrationRulesTest {
     }
 
     @Test
-    fun `ドラフトの初期値は 100ml`() {
-        assertEquals(100, DRAFT_DEFAULT_ML)
+    fun `ドラフトの初期値は 0ml`() {
+        assertEquals(0, DRAFT_DEFAULT_ML)
     }
 
     @Test
-    fun `プラスマイナスは 100ml 刻みでドラフトだけを動かす`() {
-        assertEquals(200, stepDraft(100, 1))
-        assertEquals(300, stepDraft(100, 2))
-        assertEquals(0, stepDraft(100, -1))
+    fun `プラスマイナスは 50ml 刻みでドラフトだけを動かす`() {
+        assertEquals(150, stepDraft(100, 1))
+        assertEquals(200, stepDraft(100, 2))
+        assertEquals(50, stepDraft(100, -1))
+        assertEquals(0, stepDraft(50, -1))
         assertEquals(0, stepDraft(0, -1))
     }
 
@@ -36,8 +37,9 @@ class HydrationRulesTest {
     @Test
     fun `ドラフト 0ml では Submit できない`() {
         assertFalse(canSubmit(0))
+        assertTrue(canSubmit(50))
         assertTrue(canSubmit(100))
-        assertTrue(canSubmit(300))
+        assertTrue(canSubmit(250))
     }
 
     @Test
@@ -73,11 +75,26 @@ class HydrationRulesTest {
     }
 
     @Test
-    fun `日付をまたいだらドラフトは 100ml に戻す`() {
+    fun `日付をまたいだらドラフトは 0ml に戻す`() {
         val today = LocalDate.of(2026, 8, 16)
-        assertEquals(100, resolveDraft(700, LocalDate.of(2026, 8, 15), today))
+        assertEquals(0, resolveDraft(700, LocalDate.of(2026, 8, 15), today))
         assertEquals(700, resolveDraft(700, today, today))
-        assertEquals(100, resolveDraft(700, null, today))
+        assertEquals(0, resolveDraft(700, null, today))
+    }
+
+    @Test
+    fun `ドラフトがあるときプレビュー合計は今日プラス追加分`() {
+        assertEquals(250, previewTodayMl(250, 0))
+        assertEquals(300, previewTodayMl(250, 50))
+        assertEquals(400, previewTodayMl(250, 150))
+    }
+
+    @Test
+    fun `ゲージの赤は追加分だけ伸びる`() {
+        assertEquals(0f, gaugeDraftSweepDegrees(250, 0, 1500), 0.01f)
+        assertEquals(6f, gaugeDraftSweepDegrees(250, 50, 1500), 0.01f)
+        assertEquals(0f, gaugeDraftSweepDegrees(2000, 50, 2000), 0.01f)
+        assertEquals(9f, gaugeDraftSweepDegrees(1900, 200, 2000), 0.01f)
     }
 
     @Test

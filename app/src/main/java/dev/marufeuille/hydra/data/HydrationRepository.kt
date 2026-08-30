@@ -4,6 +4,7 @@ import dev.marufeuille.hydra.domain.DRAFT_DEFAULT_ML
 import dev.marufeuille.hydra.domain.HealthStatus
 import dev.marufeuille.hydra.domain.canSubmit
 import dev.marufeuille.hydra.domain.healthStatus
+import dev.marufeuille.hydra.domain.previewTodayMl
 import dev.marufeuille.hydra.domain.resolveDraft
 import dev.marufeuille.hydra.domain.stepDraft
 import dev.marufeuille.hydra.domain.stepGoal
@@ -63,7 +64,7 @@ class HydrationRepository(
 
     /**
      * ドラフトをスマホへ送る。Health Connect への書き込みは companion 側。
-     * キューイングに成功したらドラフトを 100ml に戻し、今日の表示を足す。
+     * キューイングに成功したらドラフトを初期値に戻し、今日の表示を足す。
      * 権限なし・送信失敗では送らず、ドラフトは維持する。
      */
     suspend fun submit(): SubmitResult {
@@ -86,7 +87,7 @@ class HydrationRepository(
         prefs.saveCompanionStatus(
             available = stored.companionAvailable,
             permitted = stored.companionPermitted,
-            todayMl = before.todayMl + before.draftMl,
+            todayMl = previewTodayMl(before.todayMl, before.draftMl),
             date = today,
         )
         onChanged()

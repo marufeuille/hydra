@@ -11,7 +11,9 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import dev.marufeuille.hydra.domain.GAUGE_MIN_VISIBLE_SWEEP_DEGREES
 import dev.marufeuille.hydra.domain.GAUGE_SWEEP_DEGREES
+import dev.marufeuille.hydra.domain.gaugeDraftSweepDegrees
 import dev.marufeuille.hydra.domain.gaugeSweepDegrees
+import dev.marufeuille.hydra.ui.theme.GaugeDraft
 import dev.marufeuille.hydra.ui.theme.GaugeFill
 import dev.marufeuille.hydra.ui.theme.GaugeTrack
 
@@ -22,9 +24,11 @@ private const val GAUGE_START_DEGREES = 180f
 fun SemicircleGauge(
     todayMl: Int,
     goalMl: Int,
+    draftMl: Int = 0,
     modifier: Modifier = Modifier,
 ) {
-    val sweep = gaugeSweepDegrees(todayMl, goalMl)
+    val todaySweep = gaugeSweepDegrees(todayMl, goalMl)
+    val draftSweep = gaugeDraftSweepDegrees(todayMl, draftMl, goalMl)
     Canvas(modifier = modifier) {
         val stroke = 10.dp.toPx()
         val inset = stroke / 2f + 8.dp.toPx()
@@ -47,8 +51,12 @@ fun SemicircleGauge(
             )
         }
         drawGauge(GaugeTrack, GAUGE_SWEEP_DEGREES)
-        if (sweep > GAUGE_MIN_VISIBLE_SWEEP_DEGREES) {
-            drawGauge(GaugeFill, sweep)
+        // 赤を先に描き、確定分の青を重ねる。追加分だけ赤が見える。
+        if (draftSweep > GAUGE_MIN_VISIBLE_SWEEP_DEGREES) {
+            drawGauge(GaugeDraft, todaySweep + draftSweep)
+        }
+        if (todaySweep > GAUGE_MIN_VISIBLE_SWEEP_DEGREES) {
+            drawGauge(GaugeFill, todaySweep)
         }
     }
 }

@@ -23,9 +23,9 @@ class HydrationRepositoryTest {
     fun `プラスは送信せずドラフトだけ増やす`() = runBlocking {
         val sender = FakeSender()
         val repo = HydrationRepository(InMemoryPrefs(readyStored(800)), sender, clock)
-        repo.adjustDraft(2)
+        repo.adjustDraft(4)
         val snap = repo.snapshot()
-        assertEquals(300, snap.draftMl)
+        assertEquals(200, snap.draftMl)
         assertEquals(800, snap.todayMl)
         assertEquals(emptyList<Int>(), sender.sips)
     }
@@ -35,12 +35,12 @@ class HydrationRepositoryTest {
         val sender = FakeSender()
         val reminder = FakeReminder()
         val repo = HydrationRepository(InMemoryPrefs(readyStored(800)), sender, clock, reminder = reminder)
-        repo.adjustDraft(2)
+        repo.adjustDraft(5)
         val result = repo.submit()
         assertTrue(result is SubmitResult.Written)
-        assertEquals(listOf(300), sender.sips)
+        assertEquals(listOf(250), sender.sips)
         assertEquals(listOf(clock.millis()), reminder.recordedAtMillis)
-        assertEquals(1100, result.snapshot.todayMl)
+        assertEquals(1050, result.snapshot.todayMl)
         assertEquals(DRAFT_DEFAULT_ML, result.snapshot.draftMl)
     }
 
@@ -48,18 +48,29 @@ class HydrationRepositoryTest {
     fun `マイナスしても過去の送信は消えない`() = runBlocking {
         val sender = FakeSender()
         val repo = HydrationRepository(InMemoryPrefs(readyStored(800)), sender, clock)
-        repo.adjustDraft(2)
+        repo.adjustDraft(5)
         repo.submit()
         repo.adjustDraft(-1)
-        assertEquals(listOf(300), sender.sips)
-        assertEquals(1100, repo.snapshot().todayMl)
+        assertEquals(listOf(250), sender.sips)
+        assertEquals(1050, repo.snapshot().todayMl)
+    }
+
+    @Test
+    fun `ドラフト 50ml は Submit できる`() = runBlocking {
+        val sender = FakeSender()
+        val repo = HydrationRepository(InMemoryPrefs(readyStored(800)), sender, clock)
+        repo.adjustDraft(1)
+        val result = repo.submit()
+        assertTrue(result is SubmitResult.Written)
+        assertEquals(listOf(50), sender.sips)
+        assertEquals(850, result.snapshot.todayMl)
+        assertEquals(DRAFT_DEFAULT_ML, result.snapshot.draftMl)
     }
 
     @Test
     fun `ドラフト 0 では Submit できない`() = runBlocking {
         val sender = FakeSender()
         val repo = HydrationRepository(InMemoryPrefs(readyStored(0)), sender, clock)
-        repo.adjustDraft(-1)
         val result = repo.submit()
         assertTrue(result is SubmitResult.Rejected)
         assertEquals(emptyList<Int>(), sender.sips)
@@ -76,17 +87,17 @@ class HydrationRepositoryTest {
             clock,
             reminder = reminder,
         )
-        repo.adjustDraft(2)
+        repo.adjustDraft(5)
         val result = repo.submit()
         assertTrue(result is SubmitResult.Failed)
         assertEquals(emptyList<Int>(), sender.sips)
         assertEquals(emptyList<Long>(), reminder.recordedAtMillis)
-        assertEquals(300, result.snapshot.draftMl)
+        assertEquals(250, result.snapshot.draftMl)
         assertEquals(HealthStatus.NeedsPermission, result.snapshot.status)
     }
 
     @Test
-    fun `日付をまたぐとドラフトは 100ml に戻る`() = runBlocking {
+    fun `日付をまたぐとドラフトは 0ml に戻る`() = runBlocking {
         val prefs = InMemoryPrefs(
             StoredPrefs(
                 goalMl = GOAL_DEFAULT_ML,
@@ -100,7 +111,7 @@ class HydrationRepositoryTest {
         )
         val repo = HydrationRepository(prefs, FakeSender(), clock)
         val snap = repo.snapshot()
-        assertEquals(100, snap.draftMl)
+        assertEquals(0, snap.draftMl)
         assertEquals(0, snap.todayMl)
     }
 

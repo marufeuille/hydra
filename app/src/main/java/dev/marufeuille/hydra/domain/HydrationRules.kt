@@ -2,10 +2,11 @@ package dev.marufeuille.hydra.domain
 
 import java.time.LocalDate
 
-const val STEP_ML = 100
+const val DRAFT_STEP_ML = 50
+const val GOAL_STEP_ML = 100
 const val DRAFT_MIN_ML = 0
 const val DRAFT_MAX_ML = 2000
-const val DRAFT_DEFAULT_ML = 100
+const val DRAFT_DEFAULT_ML = 0
 const val GOAL_MIN_ML = 100
 const val GOAL_MAX_ML = 5000
 const val GOAL_DEFAULT_ML = 2000
@@ -21,12 +22,12 @@ fun clampDraft(ml: Int): Int = ml.coerceIn(DRAFT_MIN_ML, DRAFT_MAX_ML)
 fun clampGoal(ml: Int): Int = ml.coerceIn(GOAL_MIN_ML, GOAL_MAX_ML)
 
 fun stepDraft(currentMl: Int, deltaSteps: Int): Int =
-    clampDraft(currentMl + deltaSteps * STEP_ML)
+    clampDraft(currentMl + deltaSteps * DRAFT_STEP_ML)
 
 fun stepGoal(currentMl: Int, deltaSteps: Int): Int =
-    clampGoal(currentMl + deltaSteps * STEP_ML)
+    clampGoal(currentMl + deltaSteps * GOAL_STEP_ML)
 
-fun canSubmit(draftMl: Int): Boolean = draftMl >= STEP_ML
+fun canSubmit(draftMl: Int): Boolean = draftMl >= DRAFT_STEP_ML
 
 /**
  * 今日の摂取量 ÷ 目標。0.0〜1.0 にクランプする。
@@ -40,6 +41,19 @@ fun progress(todayMl: Int, goalMl: Int): Float {
 /** 進捗に対応する上側半円の掃引角。半分で 90°（12時）、到達で 180°（3時）。 */
 fun gaugeSweepDegrees(todayMl: Int, goalMl: Int): Float =
     GAUGE_SWEEP_DEGREES * progress(todayMl, goalMl)
+
+/** Submit 後の今日の合計。ドラフト 0 なら今日の摂取量のまま。 */
+fun previewTodayMl(todayMl: Int, draftMl: Int): Int = todayMl + draftMl.coerceAtLeast(0)
+
+/**
+ * ドラフト追加分の掃引角。青（確定分）の先に重ねる赤弧の長さ。
+ * 今日がすでに 100% なら 0。超過分は右端で切る。
+ */
+fun gaugeDraftSweepDegrees(todayMl: Int, draftMl: Int, goalMl: Int): Float {
+    if (draftMl <= 0) return 0f
+    return (gaugeSweepDegrees(previewTodayMl(todayMl, draftMl), goalMl) - gaugeSweepDegrees(todayMl, goalMl))
+        .coerceAtLeast(0f)
+}
 
 /**
  * 日付をまたいだらドラフトを初期値に戻す。同じ暦日なら保存値を使う。

@@ -21,11 +21,13 @@ import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.Text
 import dev.marufeuille.hydra.domain.HealthStatus
+import dev.marufeuille.hydra.domain.previewTodayMl
 import dev.marufeuille.hydra.ui.HydraTestTags
 import dev.marufeuille.hydra.ui.components.SemicircleGauge
 import dev.marufeuille.hydra.ui.components.StepperButtons
 import dev.marufeuille.hydra.ui.theme.Accent
 import dev.marufeuille.hydra.ui.theme.ButtonDark
+import dev.marufeuille.hydra.ui.theme.GaugeDraft
 import dev.marufeuille.hydra.ui.theme.OnAccent
 import dev.marufeuille.hydra.ui.theme.TextPrimary
 import dev.marufeuille.hydra.ui.theme.TextSecondary
@@ -53,15 +55,11 @@ internal fun RecordContent(
     onPlus: () -> Unit,
     onSubmit: () -> Unit,
 ) {
-    val header = when (state.status) {
-        HealthStatus.NeedsPermission -> "許可が必要"
-        HealthStatus.Unavailable -> "スマホが必要"
-        HealthStatus.Ready -> "${state.todayMl} / ${state.goalMl} ml"
-    }
     Box(modifier = Modifier.fillMaxSize()) {
         SemicircleGauge(
             todayMl = state.todayMl,
             goalMl = state.goalMl,
+            draftMl = state.draftMl,
             modifier = Modifier.fillMaxSize(),
         )
         Column(
@@ -71,15 +69,7 @@ internal fun RecordContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Text(
-                text = header,
-                fontSize = 11.sp,
-                color = TextSecondary,
-                modifier = Modifier
-                    .testTag(HydraTestTags.RECORD_TODAY)
-                    .clickable(onClick = onOpenSettings)
-                    .padding(4.dp),
-            )
+            RecordTotalHeader(state = state, onOpenSettings = onOpenSettings)
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
                     text = "${state.draftMl}",
@@ -123,6 +113,42 @@ internal fun RecordContent(
             state.message?.let {
                 Text(it, fontSize = 11.sp, color = TextSecondary, modifier = Modifier.padding(top = 4.dp))
             }
+        }
+    }
+}
+
+@Composable
+private fun RecordTotalHeader(
+    state: RecordUiState,
+    onOpenSettings: () -> Unit,
+) {
+    val tap = Modifier
+        .clickable(onClick = onOpenSettings)
+        .padding(4.dp)
+        .testTag(HydraTestTags.RECORD_TODAY)
+    when (state.status) {
+        HealthStatus.NeedsPermission -> Text("許可が必要", fontSize = 11.sp, color = TextSecondary, modifier = tap)
+        HealthStatus.Unavailable -> Text("スマホが必要", fontSize = 11.sp, color = TextSecondary, modifier = tap)
+        HealthStatus.Ready -> if (state.draftMl > 0) {
+            Row(modifier = tap, verticalAlignment = Alignment.Bottom) {
+                Text(
+                    text = "${previewTodayMl(state.todayMl, state.draftMl)}",
+                    fontSize = 11.sp,
+                    color = GaugeDraft,
+                )
+                Text(
+                    text = " / ${state.goalMl} ml",
+                    fontSize = 11.sp,
+                    color = TextSecondary,
+                )
+            }
+        } else {
+            Text(
+                text = "${state.todayMl} / ${state.goalMl} ml",
+                fontSize = 11.sp,
+                color = TextSecondary,
+                modifier = tap,
+            )
         }
     }
 }

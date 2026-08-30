@@ -21,7 +21,7 @@ Intervo とは別アプリ。製品版公開はせず、**Play 内部テスト**
 - 最後の記録から約 1 時間空くと振動で通知（21:00〜翌 06:00 は非通知）
 - スマホの Hydra で Health Connect の水分読み取り・書き込みを許可
 
-仕様と操作モックは [docs/spec/wear-hydration.md](docs/spec/wear-hydration.md)。配信手順は [docs/release-ci.md](docs/release-ci.md)。
+仕様と操作モックは [docs/spec/wear-hydration.md](docs/spec/wear-hydration.md)。E2E テスト設計は [docs/e2e-test-design.md](docs/e2e-test-design.md)。配信手順は [docs/release-ci.md](docs/release-ci.md)。
 
 ## 開発用（エミュレータ）
 

@@ -13,11 +13,11 @@ data class NutritionToday(
     }
 }
 
-/** 目標は今はここで固定。設定画面はまだ無い。 */
+/** 目標は今はここで固定（カロミルの目標に合わせている）。設定画面はまだ無い。 */
 enum class Macro(val label: String, val title: String, val goalG: Int) {
-    PROTEIN("たんぱく質", "P", 90),
-    FAT("脂質", "F", 60),
-    CARBS("炭水化物", "C", 250),
+    PROTEIN("たんぱく質", "P", 150),
+    FAT("脂質", "F", 55),
+    CARBS("炭水化物", "C", 310),
 }
 
 /**

@@ -2,6 +2,9 @@
 <resources>
     <string name="app_name">Hydra</string>
     <string name="complication_label">今日の水分</string>
+    <string name="complication_protein">今日のたんぱく質（P）</string>
+    <string name="complication_fat">今日の脂質（F）</string>
+    <string name="complication_carbs">今日の炭水化物（C）</string>
     <string name="reminder_channel_name">水分リマインダー</string>
     <string name="reminder_channel_description">水分を記録してから一定時間経過したときの通知</string>
     <string name="reminder_title">水分をとりましょう</string>

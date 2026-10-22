@@ -3,6 +3,7 @@ package dev.marufeuille.hydra.data
 import dev.marufeuille.hydra.domain.DRAFT_DEFAULT_ML
 import dev.marufeuille.hydra.domain.GOAL_DEFAULT_ML
 import dev.marufeuille.hydra.domain.HealthStatus
+import dev.marufeuille.hydra.domain.NutritionToday
 import dev.marufeuille.hydra.notification.HydrationReminder
 import dev.marufeuille.hydra.sync.HydrationSender
 import kotlinx.coroutines.runBlocking
@@ -145,6 +146,54 @@ class HydrationRepositoryTest {
         companionPermitted = true,
     )
 
+    @Test
+    fun `companion から届いた栄養を今日の分として持つ`() = runBlocking {
+        val repo = HydrationRepository(InMemoryPrefs(readyStored(800)), FakeSender(), clock)
+        repo.applyCompanionStatus(
+            available = true,
+            permitted = true,
+            todayMl = 900,
+            nutrition = NutritionStatus(permitted = true, today = NutritionToday(62, 38, 180)),
+        )
+        val snap = repo.snapshot()
+        assertTrue(snap.nutritionPermitted)
+        assertEquals(NutritionToday(62, 38, 180), snap.nutrition)
+    }
+
+    @Test
+    fun `古い companion から栄養が来なければ未許可として扱う`() = runBlocking {
+        val repo = HydrationRepository(InMemoryPrefs(readyStored(800)), FakeSender(), clock)
+        repo.applyCompanionStatus(available = true, permitted = true, todayMl = 900)
+        val snap = repo.snapshot()
+        assertEquals(false, snap.nutritionPermitted)
+        assertEquals(NutritionToday(), snap.nutrition)
+    }
+
+    @Test
+    fun `日付が変わったら栄養は 0 に戻す`() = runBlocking {
+        val prefs = InMemoryPrefs(
+            readyStored(800).copy(
+                nutritionPermitted = true,
+                cachedNutrition = NutritionToday(62, 38, 180),
+                cachedNutritionDate = today.minusDays(1),
+            )
+        )
+        val repo = HydrationRepository(prefs, FakeSender(), clock)
+        assertEquals(NutritionToday(), repo.snapshot().nutrition)
+    }
+
+    @Test
+    fun `最新値の問い合わせは前回の受信から 10 分空ける`() = runBlocking {
+        val sender = FakeSender()
+        val prefs = InMemoryPrefs(readyStored(800).copy(statusReceivedAtMillis = clock.millis() - 5 * 60 * 1000))
+        HydrationRepository(prefs, sender, clock).refreshIfStale()
+        assertEquals(0, sender.statusRequests)
+
+        val stale = InMemoryPrefs(readyStored(800).copy(statusReceivedAtMillis = clock.millis() - 11 * 60 * 1000))
+        HydrationRepository(stale, sender, clock).refreshIfStale()
+        assertEquals(1, sender.statusRequests)
+    }
+
     private class InMemoryPrefs(initial: StoredPrefs) : GoalDraftStore {
         private var value = initial
         override suspend fun load(): StoredPrefs = value
@@ -167,15 +216,32 @@ class HydrationRepositoryTest {
                 cachedTodayDate = date,
             )
         }
+        override suspend fun saveNutritionStatus(
+            permitted: Boolean,
+            nutrition: NutritionToday,
+            date: LocalDate,
+            receivedAtMillis: Long,
+        ) {
+            value = value.copy(
+                nutritionPermitted = permitted,
+                cachedNutrition = nutrition,
+                cachedNutritionDate = date,
+                statusReceivedAtMillis = receivedAtMillis,
+            )
+        }
     }
 
     private class FakeSender : HydrationSender {
         val sips = mutableListOf<Int>()
+        var statusRequests = 0
         override suspend fun sendSip(volumeMl: Int, recordedAtMillis: Long): Result<Unit> {
             sips += volumeMl
             return Result.success(Unit)
         }
-        override suspend fun requestStatus(): Result<Unit> = Result.success(Unit)
+        override suspend fun requestStatus(): Result<Unit> {
+            statusRequests += 1
+            return Result.success(Unit)
+        }
     }
 
     private class FakeReminder : HydrationReminder {

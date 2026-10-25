@@ -153,11 +153,11 @@ class HydrationRepositoryTest {
             available = true,
             permitted = true,
             todayMl = 900,
-            nutrition = NutritionStatus(permitted = true, today = NutritionToday(62, 38, 180)),
+            nutrition = NutritionStatus(permitted = true, today = NutritionToday(62, 38, 180, 1480)),
         )
         val snap = repo.snapshot()
         assertTrue(snap.nutritionPermitted)
-        assertEquals(NutritionToday(62, 38, 180), snap.nutrition)
+        assertEquals(NutritionToday(62, 38, 180, 1480), snap.nutrition)
     }
 
     @Test

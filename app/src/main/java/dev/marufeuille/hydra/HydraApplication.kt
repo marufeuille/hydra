@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.ComponentName
 import androidx.wear.tiles.TileService
 import androidx.wear.watchface.complications.datasource.ComplicationDataSourceUpdateRequester
+import dev.marufeuille.hydra.complication.CaloriesComplicationService
 import dev.marufeuille.hydra.complication.CarbsComplicationService
 import dev.marufeuille.hydra.complication.FatComplicationService
 import dev.marufeuille.hydra.complication.HydrationComplicationService
@@ -44,6 +45,7 @@ class AppContainer(application: Application) {
 
 private val COMPLICATION_SERVICES = listOf(
     HydrationComplicationService::class.java,
+    CaloriesComplicationService::class.java,
     ProteinComplicationService::class.java,
     FatComplicationService::class.java,
     CarbsComplicationService::class.java,

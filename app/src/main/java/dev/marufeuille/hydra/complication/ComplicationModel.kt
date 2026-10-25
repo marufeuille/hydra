@@ -37,24 +37,25 @@ fun complicationUiModel(todayMl: Int, goalMl: Int, status: HealthStatus): Compli
 }
 
 /**
- * 今日の P / F / C。栄養の読み取りを許可していないときも「—」。
+ * 今日のカロリーと P / F / C。栄養の読み取りを許可していないときも「—」。
  * 水分の権限とは別なので、水分だけ使う場合は許可しなくてよい。
  */
 fun nutritionComplicationUiModel(
     macro: Macro,
-    grams: Int,
+    amount: Int,
     status: HealthStatus,
     permitted: Boolean,
 ): ComplicationUiModel {
     if (status != HealthStatus.Ready || !permitted) {
-        return ComplicationUiModel(0, macro.goalG, 0, "—", macro.title, "${macro.label} 未取得")
+        return ComplicationUiModel(0, macro.goal, 0, "—", macro.title, "${macro.label} 未取得")
     }
+    val text = "${format(amount)}${macro.unit}"
     return ComplicationUiModel(
-        value = grams,
-        goal = macro.goalG,
-        rangedValue = grams.coerceIn(0, macro.goalG),
-        text = "${format(grams)}g",
+        value = amount,
+        goal = macro.goal,
+        rangedValue = amount.coerceIn(0, macro.goal),
+        text = text,
         title = macro.title,
-        contentDescription = "${macro.label} ${format(grams)}g / 目標 ${macro.goalG}g",
+        contentDescription = "${macro.label} $text / 目標 ${format(macro.goal)}${macro.unit}",
     )
 }

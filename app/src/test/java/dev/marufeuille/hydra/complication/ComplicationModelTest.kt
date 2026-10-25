@@ -41,9 +41,18 @@ class ComplicationModelTest {
     fun `栄養はグラムと P F C の見出しで出す`() {
         val model = nutritionComplicationUiModel(Macro.PROTEIN, 62, HealthStatus.Ready, permitted = true)
         assertEquals(62, model.value)
-        assertEquals(Macro.PROTEIN.goalG, model.goal)
+        assertEquals(Macro.PROTEIN.goal, model.goal)
         assertEquals("62g", model.text)
         assertEquals("P", model.title)
+    }
+
+    @Test
+    fun `カロリーは kcal で桁区切りにする`() {
+        val model = nutritionComplicationUiModel(Macro.CALORIES, 1480, HealthStatus.Ready, permitted = true)
+        assertEquals(1480, model.value)
+        assertEquals(2335, model.goal)
+        assertEquals("1,480kcal", model.text)
+        assertEquals("kcal", model.title)
     }
 
     @Test

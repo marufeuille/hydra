@@ -16,4 +16,5 @@ object HydrationSync {
     const val KEY_PROTEIN_G = "protein_g"
     const val KEY_FAT_G = "fat_g"
     const val KEY_CARBS_G = "carbs_g"
+    const val KEY_KCAL = "kcal"
 }

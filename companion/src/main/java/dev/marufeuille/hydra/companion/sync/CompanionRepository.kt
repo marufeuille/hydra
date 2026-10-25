@@ -64,6 +64,7 @@ class CompanionRepository(context: Context) {
             dataMap.putInt(HydrationSync.KEY_PROTEIN_G, nutrition?.proteinG ?: 0)
             dataMap.putInt(HydrationSync.KEY_FAT_G, nutrition?.fatG ?: 0)
             dataMap.putInt(HydrationSync.KEY_CARBS_G, nutrition?.carbsG ?: 0)
+            dataMap.putInt(HydrationSync.KEY_KCAL, nutrition?.kcal ?: 0)
             dataMap.putLong(HydrationSync.KEY_UPDATED_AT, System.currentTimeMillis())
         }.asPutDataRequest().setUrgent()
         runCatching { dataClient.putDataItem(request).awaitTask() }

@@ -55,7 +55,7 @@ class HealthConnectHydration(context: Context) {
         }.getOrDefault(false)
     }
 
-    /** 今日の P / F / C の合計（g）。カロミルなど他アプリが書いた記録も含む。 */
+    /** 今日の P / F / C（g）とカロリー（kcal）の合計。カロミルなど他アプリが書いた記録も含む。 */
     suspend fun todayNutrition(zone: ZoneId = ZoneId.systemDefault()): Result<NutritionTotals> {
         if (!hasNutritionPermission()) return Result.failure(IllegalStateException("no permission"))
         return runCatching {
@@ -68,6 +68,7 @@ class HealthConnectHydration(context: Context) {
                         NutritionRecord.PROTEIN_TOTAL,
                         NutritionRecord.TOTAL_FAT_TOTAL,
                         NutritionRecord.TOTAL_CARBOHYDRATE_TOTAL,
+                        NutritionRecord.ENERGY_TOTAL,
                     ),
                     timeRangeFilter = TimeRangeFilter.between(start, end),
                 )
@@ -76,6 +77,7 @@ class HealthConnectHydration(context: Context) {
                 proteinG = result[NutritionRecord.PROTEIN_TOTAL]?.inGrams?.roundToInt() ?: 0,
                 fatG = result[NutritionRecord.TOTAL_FAT_TOTAL]?.inGrams?.roundToInt() ?: 0,
                 carbsG = result[NutritionRecord.TOTAL_CARBOHYDRATE_TOTAL]?.inGrams?.roundToInt() ?: 0,
+                kcal = result[NutritionRecord.ENERGY_TOTAL]?.inKilocalories?.roundToInt() ?: 0,
             )
         }
     }
@@ -116,4 +118,5 @@ data class NutritionTotals(
     val proteinG: Int,
     val fatG: Int,
     val carbsG: Int,
+    val kcal: Int,
 )

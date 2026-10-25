@@ -89,14 +89,16 @@ class HydrationComplicationService : MetricComplicationService() {
 
 abstract class NutritionComplicationService(private val macro: Macro) : MetricComplicationService() {
     override val iconRes = R.drawable.ic_nutrition
-    override val previewModel = nutritionComplicationUiModel(macro, macro.goalG * 2 / 3, HealthStatus.Ready, true)
+    override val previewModel = nutritionComplicationUiModel(macro, macro.goal * 2 / 3, HealthStatus.Ready, true)
     override fun model(snapshot: HydrationSnapshot) = nutritionComplicationUiModel(
         macro = macro,
-        grams = snapshot.nutrition.grams(macro),
+        amount = snapshot.nutrition.amount(macro),
         status = snapshot.status,
         permitted = snapshot.nutritionPermitted,
     )
 }
+
+class CaloriesComplicationService : NutritionComplicationService(Macro.CALORIES)
 
 class ProteinComplicationService : NutritionComplicationService(Macro.PROTEIN)
 

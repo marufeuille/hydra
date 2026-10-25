@@ -67,6 +67,23 @@
 
         <!-- P / F / C。カロミルなどの記録はスマホから通知されないので、30 分ごとの更新で取りに行く -->
         <service
+            android:name=".complication.CaloriesComplicationService"
+            android:exported="true"
+            android:icon="@drawable/ic_nutrition"
+            android:label="@string/complication_calories"
+            android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
+            <intent-filter>
+                <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />
+            </intent-filter>
+            <meta-data
+                android:name="android.support.wearable.complications.SUPPORTED_TYPES"
+                android:value="GOAL_PROGRESS,RANGED_VALUE,SHORT_TEXT" />
+            <meta-data
+                android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
+                android:value="1800" />
+        </service>
+
+        <service
             android:name=".complication.ProteinComplicationService"
             android:exported="true"
             android:icon="@drawable/ic_nutrition"

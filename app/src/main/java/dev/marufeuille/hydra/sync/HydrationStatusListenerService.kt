@@ -30,6 +30,7 @@ class HydrationStatusListenerService : WearableListenerService() {
                             proteinG = latest.getInt(HydrationSync.KEY_PROTEIN_G),
                             fatG = latest.getInt(HydrationSync.KEY_FAT_G),
                             carbsG = latest.getInt(HydrationSync.KEY_CARBS_G),
+                            kcal = latest.getInt(HydrationSync.KEY_KCAL),
                         ),
                     )
                 } else {

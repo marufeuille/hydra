@@ -2,6 +2,7 @@
 <resources>
     <string name="app_name">Hydra</string>
     <string name="complication_label">今日の水分</string>
+    <string name="complication_calories">今日のカロリー</string>
     <string name="complication_protein">今日のたんぱく質（P）</string>
     <string name="complication_fat">今日の脂質（F）</string>
     <string name="complication_carbs">今日の炭水化物（C）</string>

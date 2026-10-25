@@ -50,7 +50,7 @@ class ComplicationModelTest {
     fun `カロリーは kcal で桁区切りにする`() {
         val model = nutritionComplicationUiModel(Macro.CALORIES, 1480, HealthStatus.Ready, permitted = true)
         assertEquals(1480, model.value)
-        assertEquals(2335, model.goal)
+        assertEquals(Macro.CALORIES.goal, model.goal)
         assertEquals("1,480kcal", model.text)
         assertEquals("kcal", model.title)
     }

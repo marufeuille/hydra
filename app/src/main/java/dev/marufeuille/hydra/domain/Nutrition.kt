@@ -17,11 +17,10 @@ data class NutritionToday(
 
 /** 目標は今はここで固定（カロミルの目標に合わせている）。設定画面はまだ無い。 */
 enum class Macro(val label: String, val title: String, val goal: Int, val unit: String) {
-    // カロリーの目標は P / F / C の目標から計算（150×4 + 55×9 + 310×4）
-    CALORIES("カロリー", "kcal", 2335, "kcal"),
+    CALORIES("カロリー", "kcal", 2250, "kcal"),
     PROTEIN("たんぱく質", "P", 150, "g"),
-    FAT("脂質", "F", 55, "g"),
-    CARBS("炭水化物", "C", 310, "g"),
+    FAT("脂質", "F", 45, "g"),
+    CARBS("炭水化物", "C", 300, "g"),
 }
 
 /**

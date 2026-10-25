@@ -54,10 +54,17 @@ class CompanionRepository(context: Context) {
         val available = health.isAvailable
         val permitted = runCatching { health.hasPermissions() }.getOrDefault(false)
         val todayMl = if (permitted) health.todayTotalMl().getOrDefault(0) else 0
+        val nutritionPermitted = runCatching { health.hasNutritionPermission() }.getOrDefault(false)
+        val nutrition = if (nutritionPermitted) health.todayNutrition().getOrNull() else null
         val request = PutDataMapRequest.create(HydrationSync.STATUS_PATH).apply {
             dataMap.putInt(HydrationSync.KEY_TODAY_ML, todayMl)
             dataMap.putBoolean(HydrationSync.KEY_PERMITTED, permitted)
             dataMap.putBoolean(HydrationSync.KEY_AVAILABLE, available)
+            dataMap.putBoolean(HydrationSync.KEY_NUTRITION_PERMITTED, nutritionPermitted)
+            dataMap.putInt(HydrationSync.KEY_PROTEIN_G, nutrition?.proteinG ?: 0)
+            dataMap.putInt(HydrationSync.KEY_FAT_G, nutrition?.fatG ?: 0)
+            dataMap.putInt(HydrationSync.KEY_CARBS_G, nutrition?.carbsG ?: 0)
+            dataMap.putInt(HydrationSync.KEY_KCAL, nutrition?.kcal ?: 0)
             dataMap.putLong(HydrationSync.KEY_UPDATED_AT, System.currentTimeMillis())
         }.asPutDataRequest().setUrgent()
         runCatching { dataClient.putDataItem(request).awaitTask() }

@@ -4,7 +4,11 @@ import android.app.Application
 import android.content.ComponentName
 import androidx.wear.tiles.TileService
 import androidx.wear.watchface.complications.datasource.ComplicationDataSourceUpdateRequester
+import dev.marufeuille.hydra.complication.CaloriesComplicationService
+import dev.marufeuille.hydra.complication.CarbsComplicationService
+import dev.marufeuille.hydra.complication.FatComplicationService
 import dev.marufeuille.hydra.complication.HydrationComplicationService
+import dev.marufeuille.hydra.complication.ProteinComplicationService
 import dev.marufeuille.hydra.data.HydrationRepository
 import dev.marufeuille.hydra.data.PreferencesStore
 import dev.marufeuille.hydra.notification.HydrationReminderScheduler
@@ -30,9 +34,19 @@ class AppContainer(application: Application) {
         reminder = reminderScheduler,
         onChanged = {
             TileService.getUpdater(application).requestUpdate(HydrationTileService::class.java)
-            ComplicationDataSourceUpdateRequester
-                .create(application, ComponentName(application, HydrationComplicationService::class.java))
-                .requestUpdateAll()
+            COMPLICATION_SERVICES.forEach { service ->
+                ComplicationDataSourceUpdateRequester
+                    .create(application, ComponentName(application, service))
+                    .requestUpdateAll()
+            }
         },
     )
 }
+
+private val COMPLICATION_SERVICES = listOf(
+    HydrationComplicationService::class.java,
+    CaloriesComplicationService::class.java,
+    ProteinComplicationService::class.java,
+    FatComplicationService::class.java,
+    CarbsComplicationService::class.java,
+)

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.HydrationRecord
+import androidx.health.connect.client.records.NutritionRecord
 import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.request.AggregateRequest
@@ -46,6 +47,41 @@ class HealthConnectHydration(context: Context) {
         }
     }
 
+    /** 栄養の読み取りは水分とは別に許可を取る。許可しなくても水分は使える。 */
+    suspend fun hasNutritionPermission(): Boolean {
+        if (!isAvailable) return false
+        return runCatching {
+            client.permissionController.getGrantedPermissions().containsAll(NUTRITION_PERMISSIONS)
+        }.getOrDefault(false)
+    }
+
+    /** 今日の P / F / C（g）とカロリー（kcal）の合計。カロミルなど他アプリが書いた記録も含む。 */
+    suspend fun todayNutrition(zone: ZoneId = ZoneId.systemDefault()): Result<NutritionTotals> {
+        if (!hasNutritionPermission()) return Result.failure(IllegalStateException("no permission"))
+        return runCatching {
+            val today = LocalDate.now(zone)
+            val start = today.atStartOfDay(zone).toInstant()
+            val end = today.plusDays(1).atStartOfDay(zone).toInstant()
+            val result = client.aggregate(
+                AggregateRequest(
+                    metrics = setOf(
+                        NutritionRecord.PROTEIN_TOTAL,
+                        NutritionRecord.TOTAL_FAT_TOTAL,
+                        NutritionRecord.TOTAL_CARBOHYDRATE_TOTAL,
+                        NutritionRecord.ENERGY_TOTAL,
+                    ),
+                    timeRangeFilter = TimeRangeFilter.between(start, end),
+                )
+            )
+            NutritionTotals(
+                proteinG = result[NutritionRecord.PROTEIN_TOTAL]?.inGrams?.roundToInt() ?: 0,
+                fatG = result[NutritionRecord.TOTAL_FAT_TOTAL]?.inGrams?.roundToInt() ?: 0,
+                carbsG = result[NutritionRecord.TOTAL_CARBOHYDRATE_TOTAL]?.inGrams?.roundToInt() ?: 0,
+                kcal = result[NutritionRecord.ENERGY_TOTAL]?.inKilocalories?.roundToInt() ?: 0,
+            )
+        }
+    }
+
     suspend fun insertMl(volumeMl: Int, recordedAtMillis: Long, clientRecordId: String): Result<Unit> {
         if (!hasPermissions()) return Result.failure(IllegalStateException("no permission"))
         return runCatching {
@@ -72,5 +108,15 @@ class HealthConnectHydration(context: Context) {
             HealthPermission.getReadPermission(HydrationRecord::class),
             HealthPermission.getWritePermission(HydrationRecord::class),
         )
+        val NUTRITION_PERMISSIONS = setOf(
+            HealthPermission.getReadPermission(NutritionRecord::class),
+        )
     }
 }
+
+data class NutritionTotals(
+    val proteinG: Int,
+    val fatG: Int,
+    val carbsG: Int,
+    val kcal: Int,
+)

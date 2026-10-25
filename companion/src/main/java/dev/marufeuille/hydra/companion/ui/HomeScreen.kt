@@ -39,7 +39,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
     ) { padding ->
         HomeContent(
             state = state,
-            onRequestPermission = { launcher.launch(HealthConnectHydration.PERMISSIONS) },
+            onRequestPermission = { launcher.launch(HealthConnectHydration.PERMISSIONS + HealthConnectHydration.NUTRITION_PERMISSIONS) },
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)

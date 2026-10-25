@@ -2,8 +2,10 @@ package dev.marufeuille.hydra.data
 
 import dev.marufeuille.hydra.domain.DRAFT_DEFAULT_ML
 import dev.marufeuille.hydra.domain.HealthStatus
+import dev.marufeuille.hydra.domain.NutritionToday
 import dev.marufeuille.hydra.domain.canSubmit
 import dev.marufeuille.hydra.domain.healthStatus
+import dev.marufeuille.hydra.domain.needsStatusRefresh
 import dev.marufeuille.hydra.domain.previewTodayMl
 import dev.marufeuille.hydra.domain.resolveDraft
 import dev.marufeuille.hydra.domain.stepDraft
@@ -19,6 +21,14 @@ data class HydrationSnapshot(
     val goalMl: Int,
     val draftMl: Int,
     val status: HealthStatus,
+    val nutritionPermitted: Boolean = false,
+    val nutrition: NutritionToday = NutritionToday(),
+)
+
+/** companion から届いた栄養。古い companion は送ってこないので null になる。 */
+data class NutritionStatus(
+    val permitted: Boolean,
+    val today: NutritionToday,
 )
 
 class HydrationRepository(
@@ -42,8 +52,27 @@ class HydrationRepository(
         sender.requestStatus()
     }
 
-    suspend fun applyCompanionStatus(available: Boolean, permitted: Boolean, todayMl: Int) {
-        prefs.saveCompanionStatus(available, permitted, todayMl, today())
+    /** 前回の受信から時間が経っていれば、スマホに最新値を問い合わせる。 */
+    suspend fun refreshIfStale() {
+        if (needsStatusRefresh(prefs.load().statusReceivedAtMillis, clock.millis())) {
+            sender.requestStatus()
+        }
+    }
+
+    suspend fun applyCompanionStatus(
+        available: Boolean,
+        permitted: Boolean,
+        todayMl: Int,
+        nutrition: NutritionStatus? = null,
+    ) {
+        val today = today()
+        prefs.saveCompanionStatus(available, permitted, todayMl, today)
+        prefs.saveNutritionStatus(
+            permitted = nutrition?.permitted ?: false,
+            nutrition = nutrition?.today ?: NutritionToday(),
+            date = today,
+            receivedAtMillis = clock.millis(),
+        )
         onChanged()
     }
 
@@ -100,6 +129,8 @@ class HydrationRepository(
         goalMl = goalMl,
         draftMl = draftMl,
         status = healthStatus(companionAvailable, companionPermitted),
+        nutritionPermitted = nutritionPermitted,
+        nutrition = if (cachedNutritionDate == today) cachedNutrition else NutritionToday(),
     )
 
     private fun today(): LocalDate = LocalDate.now(clock)
